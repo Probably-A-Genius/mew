@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matrix Zetamac Trainer</title>
+  <style>
+    body {
+      background-color: black;
+      color: #00ff00;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1, h2 {
+      margin: 10px;
+    }
+    #problem {
+      font-size: 48px;
+      margin: 20px;
+    }
+    input[type="number"] {
+      font-size: 32px;
+      padding: 5px;
+      background: black;
+      color: #00ff00;
+      border: none;
+      outline: none;
+      text-align: center;
+      width: 100px;
+    }
+    #report {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Matrix Zetamac Trainer</h1>
+  <h2 id="timer">120</h2>
+  <div id="problem">Press Start</div>
+  <input type="number" id="answerInput" disabled />
+  <button onclick="startGame()">Start</button>
+  <div id="report"></div>
+
+  <script>
+    let problems = [];
+    let current = 0;
+    let timer = 120;
+    let interval;
+    let reactionStart;
+    let inputStart;
+    const timerDisplay = document.getElementById("timer");
+    const problemDisplay = document.getElementById("problem");
+    const input = document.getElementById("answerInput");
+    const report = document.getElementById("report");
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateProblem() {
+      const type = randomInt(1, 4); // 1-add, 2-sub, 3-mul, 4-div
+      let a, b, answer;
+      switch (type) {
+        case 1:
+          a = randomInt(2, 100);
+          b = randomInt(2, 100);
+          answer = a + b;
+          return { question: `${a} + ${b}`, answer };
+        case 2:
+          b = randomInt(2, 100);
+          answer = randomInt(b, 100);
+          a = answer + b;
+          return { question: `${a} - ${b}`, answer };
+        case 3:
+          a = randomInt(10, 99);
+          b = randomInt(2, 9);
+          answer = a * b;
+          return { question: `${a} × ${b}`, answer };
+        case 4:
+          b = randomInt(2, 9);
+          answer = randomInt(10, 99);
+          a = answer * b;
+          return { question: `${a} ÷ ${b}`, answer };
+      }
+    }
+
+    function nextProblem() {
+      const p = generateProblem();
+      problems.push({
+        ...p,
+        shownAt: performance.now(),
+        firstKeyAt: null,
+        solvedAt: null,
+        userAnswer: null
+      });
+      current = problems.length - 1;
+      problemDisplay.textContent = p.question;
+      input.value = "";
+      input.disabled = false;
+      input.focus();
+      reactionStart = performance.now();
+    }
+
+    input.addEventListener("input", () => {
+      const val = input.value;
+      const currentProblem = problems[current];
+      if (!currentProblem.firstKeyAt) {
+        currentProblem.firstKeyAt = performance.now();
+      }
+      if (parseInt(val) === currentProblem.answer) {
+        currentProblem.userAnswer = parseInt(val);
+        currentProblem.solvedAt = performance.now();
+        nextProblem();
+      } else if (val.length >= currentProblem.answer.toString().length) {
+        currentProblem.userAnswer = parseInt(val);
+        currentProblem.solvedAt = performance.now();
+        nextProblem();
+      }
+    });
+
+    function startGame() {
+      problems = [];
+      timer = 120;
+      report.innerHTML = "";
+      input.disabled = false;
+      input.focus();
+      nextProblem();
+      interval = setInterval(() => {
+        timer--;
+        timerDisplay.textContent = timer;
+        if (timer <= 0) {
+          clearInterval(interval);
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      input.disabled = true;
+      problemDisplay.textContent = "Time's up!";
+      let html = `<h3>Report</h3><table><tr><th>#</th><th>Problem</th><th>Your Answer</th><th>Correct</th><th>Reaction Time (ms)</th><th>Typing Time (ms)</th></tr>`;
+      problems.forEach((p, i) => {
+        const correct = p.userAnswer === p.answer;
+        const reaction = p.firstKeyAt ? Math.round(p.firstKeyAt - p.shownAt) : "-";
+        const typing = p.solvedAt && p.firstKeyAt ? Math.round(p.solvedAt - p.firstKeyAt) : "-";
+        html += `<tr><td>${i + 1}</td><td>${p.question}</td><td>${p.userAnswer ?? ""}</td><td>${correct ? "✔" : "✘"}</td><td>${reaction}</td><td>${typing}</td></tr>`;
+      });
+      html += `</table>`;
+      report.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
