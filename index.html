@@ -15,6 +15,7 @@
       justify-content: center;
       height: 100vh;
       margin: 0;
+      overflow: hidden;
     }
     h1, h2 {
       margin: 10px;
@@ -39,6 +40,15 @@
       overflow-y: auto;
       font-size: 14px;
     }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #00ff00;
+      padding: 4px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -54,8 +64,6 @@
     let current = 0;
     let timer = 120;
     let interval;
-    let reactionStart;
-    let inputStart;
     const timerDisplay = document.getElementById("timer");
     const problemDisplay = document.getElementById("problem");
     const input = document.getElementById("answerInput");
@@ -106,20 +114,15 @@
       input.value = "";
       input.disabled = false;
       input.focus();
-      reactionStart = performance.now();
     }
 
     input.addEventListener("input", () => {
       const val = input.value;
       const currentProblem = problems[current];
-      if (!currentProblem.firstKeyAt) {
+      if (!currentProblem.firstKeyAt && val.length > 0) {
         currentProblem.firstKeyAt = performance.now();
       }
-      if (parseInt(val) === currentProblem.answer) {
-        currentProblem.userAnswer = parseInt(val);
-        currentProblem.solvedAt = performance.now();
-        nextProblem();
-      } else if (val.length >= currentProblem.answer.toString().length) {
+      if (val === currentProblem.answer.toString()) {
         currentProblem.userAnswer = parseInt(val);
         currentProblem.solvedAt = performance.now();
         nextProblem();
@@ -133,6 +136,7 @@
       input.disabled = false;
       input.focus();
       nextProblem();
+      timerDisplay.textContent = timer;
       interval = setInterval(() => {
         timer--;
         timerDisplay.textContent = timer;
@@ -150,7 +154,7 @@
       problems.forEach((p, i) => {
         const correct = p.userAnswer === p.answer;
         const reaction = p.firstKeyAt ? Math.round(p.firstKeyAt - p.shownAt) : "-";
-        const typing = p.solvedAt && p.firstKeyAt ? Math.round(p.solvedAt - p.firstKeyAt) : "-";
+        const typing = (p.solvedAt && p.firstKeyAt) ? Math.round(p.solvedAt - p.firstKeyAt) : "-";
         html += `<tr><td>${i + 1}</td><td>${p.question}</td><td>${p.userAnswer ?? ""}</td><td>${correct ? "✔" : "✘"}</td><td>${reaction}</td><td>${typing}</td></tr>`;
       });
       html += `</table>`;
