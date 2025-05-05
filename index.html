@@ -150,14 +150,32 @@
     function endGame() {
       input.disabled = true;
       problemDisplay.textContent = "Time's up!";
+
+      let totalReaction = 0, totalTyping = 0, count = 0;
+
       let html = `<h3>Report</h3><table><tr><th>#</th><th>Problem</th><th>Your Answer</th><th>Correct</th><th>Reaction Time (ms)</th><th>Typing Time (ms)</th></tr>`;
       problems.forEach((p, i) => {
         const correct = p.userAnswer === p.answer;
         const reaction = p.firstKeyAt ? Math.round(p.firstKeyAt - p.shownAt) : "-";
         const typing = (p.solvedAt && p.firstKeyAt) ? Math.round(p.solvedAt - p.firstKeyAt) : "-";
+
+        if (typeof reaction === "number") totalReaction += reaction;
+        if (typeof typing === "number") totalTyping += typing;
+        if (typeof reaction === "number" && typeof typing === "number") count++;
+
         html += `<tr><td>${i + 1}</td><td>${p.question}</td><td>${p.userAnswer ?? ""}</td><td>${correct ? "✔" : "✘"}</td><td>${reaction}</td><td>${typing}</td></tr>`;
       });
       html += `</table>`;
+
+      if (count > 0) {
+        const avgReaction = Math.round(totalReaction / count);
+        const avgTyping = Math.round(totalTyping / count);
+        const avgTotal = Math.round((totalReaction + totalTyping) / count);
+        html += `<p><strong>Average Reaction Time:</strong> ${avgReaction} ms</p>`;
+        html += `<p><strong>Average Typing Time:</strong> ${avgTyping} ms</p>`;
+        html += `<p><strong>Average Total Time per Problem:</strong> ${avgTotal} ms</p>`;
+      }
+
       report.innerHTML = html;
     }
   </script>
